@@ -24,6 +24,15 @@
   --gold: #D4AF37; /* Brass/Gold accent */
 }
 
+.dark {
+  --bg: #0F170F; /* Deep charcoal-green */
+  --ink: #E2DCC8; /* Dusty clay/off-white */
+  --line: #1A2E1A; /* Dark green-black */
+  --accent: #00A67E; /* Brighter Bangladesh Green */
+  --accent-warm: #FF4D4D; /* Brighter terracotta/red */
+  --gold: #FFD700; /* Brighter Gold */
+}
+
 body {
   background-color: var(--bg);
   background-image: radial-gradient(var(--line) 0.5px, transparent 0.5px);
@@ -33,7 +42,7 @@ body {
 }
 
 .markdown-body {
-  @apply prose prose-slate max-w-none;
+  @apply prose prose-slate max-w-none dark:prose-invert;
 }
 
 .markdown-body h1 { @apply text-2xl font-serif font-bold mb-4 text-accent; }

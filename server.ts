@@ -41,6 +41,12 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (project_id) REFERENCES projects(id)
   );
+
+  CREATE TABLE IF NOT EXISTS search_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    query TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 async function startServer() {
@@ -99,6 +105,17 @@ async function startServer() {
     db.prepare("DELETE FROM citations WHERE project_id = ?").run(id);
     db.prepare("DELETE FROM projects WHERE id = ?").run(id);
     res.json({ success: true });
+  });
+
+  app.get("/api/search-history", (req, res) => {
+    const history = db.prepare("SELECT * FROM search_history ORDER BY created_at DESC LIMIT 20").all();
+    res.json(history);
+  });
+
+  app.post("/api/search-history", (req, res) => {
+    const { query } = req.body;
+    const result = db.prepare("INSERT INTO search_history (query) VALUES (?)").run(query);
+    res.json({ id: result.lastInsertRowid });
   });
 
   // Vite middleware for development

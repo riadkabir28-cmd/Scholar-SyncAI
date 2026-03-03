@@ -27,4 +27,4 @@ export interface Citation {
   created_at: string;
 }
 
-export type AgentMode = 'librarian' | 'analyst' | 'scribe' | 'reviewer';
+export type AgentMode = 'librarian' | 'analyst' | 'scribe' | 'reviewer' | 'mentor';
