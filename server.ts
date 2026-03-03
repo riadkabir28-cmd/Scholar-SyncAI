@@ -94,6 +94,12 @@ async function startServer() {
     res.json({ success: true });
   });
 
+  app.put("/api/notes/:id", (req, res) => {
+    const { content } = req.body;
+    db.prepare("UPDATE notes SET content = ? WHERE id = ?").run(content, req.params.id);
+    res.json({ success: true });
+  });
+
   app.delete("/api/citations/:id", (req, res) => {
     db.prepare("DELETE FROM citations WHERE id = ?").run(req.params.id);
     res.json({ success: true });

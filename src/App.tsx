@@ -1,5 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart as ReBarChart,
+  Bar
+} from 'recharts';
+import { 
   Library, 
   Plus, 
   Search, 
@@ -20,7 +34,9 @@ import {
   History,
   Sun,
   Moon,
-  UploadCloud
+  UploadCloud,
+  Edit3,
+  Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
@@ -614,6 +630,174 @@ const CitationManager = ({ activeProject, citations, onRefresh }: { activeProjec
   );
 };
 
+const ProjectAnalytics = ({ notes, citations }: { notes: Note[], citations: Citation[] }) => {
+  const noteTypeData = [
+    { name: 'Notes', value: notes.filter(n => n.type === 'note').length },
+    { name: 'Drafts', value: notes.filter(n => n.type === 'draft').length },
+    { name: 'Summaries', value: notes.filter(n => n.type === 'summary').length },
+  ].filter(d => d.value > 0);
+
+  const citationYearData = citations.reduce((acc: any[], curr) => {
+    const year = curr.year || 'Unknown';
+    const existing = acc.find(d => d.year === year);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      acc.push({ year, count: 1 });
+    }
+    return acc;
+  }, []).sort((a, b) => a.year.localeCompare(b.year));
+
+  const COLORS = ['#006A4E', '#B22222', '#D4AF37', '#1A2E1A'];
+
+  return (
+    <div className="flex-1 overflow-y-auto p-8 bg-bg/30">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h2 className="font-serif font-bold text-2xl text-accent">Research Analytics</h2>
+          <p className="text-ink/60 dark:text-ink/40 text-sm font-serif italic">"Visualizing the landscape of knowledge."</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Research Composition */}
+          <div className="bg-white dark:bg-ink rounded-2xl shadow-xl border border-line p-6">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-ink/40 mb-6">Research Composition</h3>
+            <div className="h-64">
+              {noteTypeData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={noteTypeData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {noteTypeData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'var(--bg)', border: '1px solid var(--line)', borderRadius: '8px' }}
+                      itemStyle={{ color: 'var(--ink)', fontSize: '12px' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-ink/30 italic text-sm">No data to visualize.</div>
+              )}
+            </div>
+            <div className="flex justify-center gap-4 mt-4">
+              {noteTypeData.map((entry, index) => (
+                <div key={entry.name} className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                  <span className="text-[10px] font-bold uppercase tracking-tighter text-ink/60">{entry.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Citation Timeline */}
+          <div className="bg-white dark:bg-ink rounded-2xl shadow-xl border border-line p-6">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-ink/40 mb-6">Citation Timeline</h3>
+            <div className="h-64">
+              {citationYearData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <ReBarChart data={citationYearData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--line)" />
+                    <XAxis 
+                      dataKey="year" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: 'var(--ink)', fontSize: 10, opacity: 0.5 }} 
+                    />
+                    <YAxis 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: 'var(--ink)', fontSize: 10, opacity: 0.5 }} 
+                    />
+                    <Tooltip 
+                      cursor={{ fill: 'var(--bg)', opacity: 0.5 }}
+                      contentStyle={{ backgroundColor: 'var(--bg)', border: '1px solid var(--line)', borderRadius: '8px' }}
+                      itemStyle={{ color: 'var(--ink)', fontSize: '12px' }}
+                    />
+                    <Bar dataKey="count" fill="var(--accent)" radius={[4, 4, 0, 0]} />
+                  </ReBarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-ink/30 italic text-sm">No citations to visualize.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Key Metrics */}
+          <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: 'Total Notes', value: notes.length, icon: FileText },
+              { label: 'Total Citations', value: citations.length, icon: Library },
+              { label: 'Drafts', value: notes.filter(n => n.type === 'draft').length, icon: PenTool },
+              { label: 'Summaries', value: notes.filter(n => n.type === 'summary').length, icon: CheckCircle },
+            ].map((stat) => (
+              <div key={stat.label} className="bg-white dark:bg-ink rounded-2xl border border-line p-6 flex flex-col items-center text-center">
+                <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center mb-3 text-accent">
+                  <stat.icon size={20} />
+                </div>
+                <div className="text-2xl font-serif font-bold text-ink">{stat.value}</div>
+                <div className="text-[10px] uppercase tracking-widest text-ink/40 font-bold">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const NoteEditor = ({ note, onSave, onClose }: { note: Note, onSave: (id: number, content: string) => void, onClose: () => void }) => {
+  const [content, setContent] = useState(note.content);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-white dark:bg-ink w-full max-w-4xl h-[80vh] rounded-2xl shadow-2xl border border-line flex flex-col overflow-hidden"
+      >
+        <div className="p-4 border-b border-line flex items-center justify-between bg-bg/50">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center text-accent">
+              <Edit3 size={18} />
+            </div>
+            <div>
+              <h3 className="font-serif font-bold text-lg">{note.title}</h3>
+              <p className="text-[10px] uppercase tracking-widest text-ink/40">{note.type}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-bg rounded-full transition-colors"><X size={20} /></button>
+        </div>
+        <div className="flex-1 p-6 overflow-hidden flex flex-col">
+          <textarea 
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="flex-1 w-full p-4 bg-bg dark:bg-bg/5 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all resize-none font-sans text-sm leading-relaxed"
+          />
+        </div>
+        <div className="p-4 border-t border-line bg-bg/50 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-bold text-ink/60 hover:text-ink">Discard Changes</button>
+          <button 
+            onClick={() => onSave(note.id, content)}
+            className="px-6 py-2 bg-accent text-white rounded-lg text-sm font-bold hover:bg-accent/90 transition-all shadow-lg shadow-accent/20"
+          >
+            Save Note
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 const PDFAnalysisTool = ({ activeProject, onRefresh }: { activeProject: Project, onRefresh: () => void }) => {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -927,7 +1111,8 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [agentMode, setAgentMode] = useState<AgentMode>('librarian');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [view, setView] = useState<'chat' | 'lit-review' | 'citations' | 'drafting' | 'pdf-analysis'>('chat');
+  const [view, setView] = useState<'chat' | 'lit-review' | 'citations' | 'drafting' | 'pdf-analysis' | 'analytics'>('chat');
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('scholar-sync-theme') === 'dark' || 
@@ -988,6 +1173,16 @@ export default function App() {
     });
     const { id } = await res.json();
     fetchProjects();
+  };
+
+  const handleUpdateNote = async (id: number, content: string) => {
+    await fetch(`/api/notes/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    setEditingNote(null);
+    if (activeProject) fetchProjectData(activeProject.id);
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -1195,6 +1390,16 @@ ${citations.map(c => `- ${c.title} by ${c.authors} (${c.year}) ${c.url ? `[Link]
                 <UploadCloud size={14} />
                 <span>PDF Analysis</span>
               </button>
+              <button 
+                onClick={() => setView('analytics')}
+                className={cn(
+                  "px-4 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2",
+                  view === 'analytics' ? "bg-white text-accent shadow-sm" : "text-ink/40 hover:text-ink/60"
+                )}
+              >
+                <BarChart size={14} />
+                <span>Analytics</span>
+              </button>
             </div>
           </div>
           
@@ -1328,7 +1533,7 @@ ${citations.map(c => `- ${c.title} by ${c.authors} (${c.year}) ${c.url ? `[Link]
                 </div>
               </div>
             )
-          ) : (
+          ) : view === 'pdf-analysis' ? (
             activeProject ? (
               <PDFAnalysisTool 
                 activeProject={activeProject} 
@@ -1339,6 +1544,20 @@ ${citations.map(c => `- ${c.title} by ${c.authors} (${c.year}) ${c.url ? `[Link]
                 <div>
                   <UploadCloud size={48} className="mx-auto mb-4" />
                   <h3 className="font-serif text-xl">Select a project to analyze PDFs</h3>
+                </div>
+              </div>
+            )
+          ) : (
+            activeProject ? (
+              <ProjectAnalytics 
+                notes={notes}
+                citations={citations}
+              />
+            ) : (
+              <div className="flex-1 flex items-center justify-center p-12 text-center opacity-40">
+                <div>
+                  <BarChart size={48} className="mx-auto mb-4" />
+                  <h3 className="font-serif text-xl">Select a project to view analytics</h3>
                 </div>
               </div>
             )
@@ -1384,17 +1603,28 @@ ${citations.map(c => `- ${c.title} by ${c.authors} (${c.year}) ${c.url ? `[Link]
                           <span className="text-[10px] uppercase tracking-tighter text-ink/40">{note.type}</span>
                         </div>
                         <p className="text-xs text-ink/60 line-clamp-2">{note.content}</p>
-                        <button 
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (!confirm("Delete note?")) return;
-                            await fetch(`/api/notes/${note.id}`, { method: 'DELETE' });
-                            fetchProjectData(activeProject!.id);
-                          }}
-                          className="absolute right-2 bottom-2 p-1 text-ink/0 group-hover:text-ink/30 hover:text-red-500 transition-all"
-                        >
-                          <Trash2 size={12} />
-                        </button>
+                        <div className="absolute right-2 bottom-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingNote(note);
+                            }}
+                            className="p-1 text-ink/30 hover:text-accent transition-all"
+                          >
+                            <Edit3 size={12} />
+                          </button>
+                          <button 
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!confirm("Delete note?")) return;
+                              await fetch(`/api/notes/${note.id}`, { method: 'DELETE' });
+                              fetchProjectData(activeProject!.id);
+                            }}
+                            className="p-1 text-ink/30 hover:text-red-500 transition-all"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </div>
                     ))
                   )
@@ -1485,6 +1715,14 @@ ${citations.map(c => `- ${c.title} by ${c.authors} (${c.year}) ${c.url ? `[Link]
           </div>
         )}
       </AnimatePresence>
+
+      {editingNote && (
+        <NoteEditor 
+          note={editingNote} 
+          onSave={handleUpdateNote} 
+          onClose={() => setEditingNote(null)} 
+        />
+      )}
     </div>
   );
 }
